@@ -1,4 +1,4 @@
-﻿namespace HRPayroll.Domain.Entities
+﻿namespace HRPayroll.Domain.Common
 {
     public abstract class AuditableEntity
     {
