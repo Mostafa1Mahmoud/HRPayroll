@@ -1,6 +1,6 @@
 ﻿namespace HRPayroll.Domain.Enums
 {
-    public enum _UserRole
+    public enum _SystemRole
     {
         SuperAdmin,
         HRManager,
