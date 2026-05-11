@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace HRPayroll.Domain.Entities.Employee
+namespace HRPayroll.Domain.Entities.EmployeeInfo
 {
-    public class EmployeePersonalInfo
+    public class Document
     {
     }
 }
