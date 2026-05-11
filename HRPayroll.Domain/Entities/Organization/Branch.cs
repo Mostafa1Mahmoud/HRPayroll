@@ -1,10 +1,5 @@
 ﻿using HRPayroll.Domain.Common;
 using HRPayroll.Domain.Entities.Identity;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace HRPayroll.Domain.Entities.Organization
 {

@@ -5,6 +5,7 @@
         Hired,
         Promoted,
         Transferred,
+        SalaryChanged,
         Terminated
     }
 }
