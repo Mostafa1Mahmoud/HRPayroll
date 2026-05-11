@@ -23,10 +23,10 @@ namespace HRPayroll.Domain.Entities.EmployeeInfo
         public SalaryStructure? SalaryStructure { get; private set; }
         public EmployeePersonalInfo? PersonalInfo { get; private set; }
 
-        private readonly List<EmployeeEmergencyContact> _emergencyContacts = [];
+        private readonly List<EmployeeEmergencyContact> _emergencyContacts = new List<EmployeeEmergencyContact>();
         public IReadOnlyCollection<EmployeeEmergencyContact> EmergencyContacts => _emergencyContacts.AsReadOnly();
 
-        private readonly List<EmploymentHistory> _employmentHistories = [];
+        private readonly List<EmploymentHistory> _employmentHistories = new List<EmploymentHistory>();
         public IReadOnlyCollection<EmploymentHistory> EmploymentHistories => _employmentHistories.AsReadOnly();
 
         private readonly List<Document> _documents = [];

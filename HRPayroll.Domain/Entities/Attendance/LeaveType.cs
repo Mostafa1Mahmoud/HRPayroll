@@ -10,10 +10,10 @@ namespace HRPayroll.Domain.Entities.Attendance
         public bool AllowCarryForward { get; private set; }
         public int? MaxCarryForwardDays { get; private set; }
 
-        private readonly List<LeavePolicy> _leavePolicies = [];
+        private readonly List<LeavePolicy> _leavePolicies = new List<LeavePolicy>();
         public IReadOnlyCollection<LeavePolicy> LeavePolicies => _leavePolicies.AsReadOnly();
 
-        private readonly List<LeaveBalance> _leaveBalances = [];
+        private readonly List<LeaveBalance> _leaveBalances = new List<LeaveBalance>();
         public IReadOnlyCollection<LeaveBalance> LeaveBalances => _leaveBalances.AsReadOnly();
 
         private LeaveType() { }
