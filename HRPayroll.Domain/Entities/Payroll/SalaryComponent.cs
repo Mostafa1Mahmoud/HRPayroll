@@ -9,7 +9,7 @@ namespace HRPayroll.Domain.Entities.Payroll
         public _ComponentType ComponentType { get; private set; }
         public _CalculationType CalculationType { get; private set; }
 
-        public List<SalaryStructureComponent> _salaryStructureComponents = new List<SalaryStructureComponent>();
+        private readonly List<SalaryStructureComponent> _salaryStructureComponents = new List<SalaryStructureComponent>();
         public IReadOnlyCollection<SalaryStructureComponent> SalaryStructureComponents => _salaryStructureComponents.AsReadOnly();
 
         private SalaryComponent() { }
@@ -24,6 +24,14 @@ namespace HRPayroll.Domain.Entities.Payroll
                 ComponentType = componentType,
                 CalculationType = calculationType
             };
+        }
+
+        public void Update(string name, _ComponentType componentType, _CalculationType calculationType)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(name);
+            Name = name.Trim();
+            ComponentType = componentType;
+            CalculationType = calculationType;
         }
     }
 }

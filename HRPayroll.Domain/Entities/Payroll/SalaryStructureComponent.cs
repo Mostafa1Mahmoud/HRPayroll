@@ -19,7 +19,7 @@ namespace HRPayroll.Domain.Entities.Payroll
 
         private SalaryStructureComponent() { }
 
-        public static SalaryStructureComponent Create(Guid salaryStructureId, Guid salaryComponentId, decimal value, int displayOrder)
+        internal static SalaryStructureComponent Create(Guid salaryStructureId, Guid salaryComponentId, decimal value, int displayOrder)
         {
             if (salaryStructureId == Guid.Empty)
                 throw new DomainException("SalaryStructureId must be a valid Guid.");
@@ -40,6 +40,14 @@ namespace HRPayroll.Domain.Entities.Payroll
                 Value = value,
                 DisplayOrder = displayOrder
             };
+        }
+
+        public void Update(decimal value)
+        {
+            if (value < 0)
+                throw new DomainException("Value cannot be negative.");
+
+             Value = value;
         }
     }
 }

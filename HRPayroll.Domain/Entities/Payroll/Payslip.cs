@@ -17,7 +17,7 @@ namespace HRPayroll.Domain.Entities.Payroll
         public Employee Employee { get; private set; }
         public PayrollRun PayrollRun { get; private set; }
 
-        public List<PayslipLine> _payslipLines = new List<PayslipLine>();
+        private readonly List<PayslipLine> _payslipLines = new List<PayslipLine>();
         public IReadOnlyCollection<PayslipLine> PayslipLines => _payslipLines.AsReadOnly();
 
         private Payslip() { }
@@ -52,7 +52,7 @@ namespace HRPayroll.Domain.Entities.Payroll
             };
         }
 
-        public void Update(decimal basicSalary)
+        public void RecalculateTotals(decimal basicSalary)
         {
             if (basicSalary < 0)
                 throw new DomainException("Basic salary cannot be negative.");
@@ -60,6 +60,8 @@ namespace HRPayroll.Domain.Entities.Payroll
             BasicSalary = basicSalary;
             GrossSalary = basicSalary + TotoalAllowance;
             NetSalary = GrossSalary - TotoalDeductions;
+            if (NetSalary < 0)
+                throw new DomainException("Net salary cannot be negative. Check deduction values.");
         }
 
         private decimal CalculateTotalAllowance() => _payslipLines.Where(l => l.ComponentType == _ComponentType.Allowance).Sum(l => l.Amount);

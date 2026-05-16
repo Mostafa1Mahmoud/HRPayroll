@@ -15,7 +15,7 @@ namespace HRPayroll.Domain.Entities.Payroll
 
         private PayslipLine() { }
 
-        public static PayslipLine Create(Guid payslipId, string componentName, _ComponentType type, decimal amount, int displayOrder)
+        internal static PayslipLine Create(Guid payslipId, string componentName, _ComponentType type, decimal amount, int displayOrder)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(componentName);
             if (payslipId == Guid.Empty)

@@ -16,6 +16,12 @@ namespace HRPayroll.Domain.Entities.Payroll
         public Company Company { get; private set; }
         public User ApprovedBy { get; private set; }
 
+        private readonly List<Payslip> _payslips = new List<Payslip>();
+        public IReadOnlyCollection<Payslip> Payslips => _payslips.AsReadOnly();
+
+        private readonly List<OneTimeAdjustment> _oneTimeAdjustments = new List<OneTimeAdjustment>();
+        public IReadOnlyCollection<OneTimeAdjustment> OneTimeAdjustments => _oneTimeAdjustments.AsReadOnly();
+
         private PayrollRun() { }
 
         public static PayrollRun Create(Guid companyId, int month, int year)
@@ -55,7 +61,33 @@ namespace HRPayroll.Domain.Entities.Payroll
         {
             if (Status != _PayrollStatus.Approved)
                 throw new DomainException("Only payroll runs in Approved status can be finalized.");
+
             Status = _PayrollStatus.Finalized;
+        }
+
+        public void AddPayslip(Payslip payslip)
+        {
+            ArgumentNullException.ThrowIfNull(payslip);
+
+            if (Status != _PayrollStatus.Draft)
+                throw new DomainException("Payslips can only be added to draft payroll runs.");
+
+            if (_payslips.Any(p => p.EmployeeId == payslip.EmployeeId))
+                throw new DomainException("A payslip for this employee already exists in this payroll run.");
+
+            _payslips.Add(payslip);
+        }
+
+        public void AddOneTimeAdjustment(OneTimeAdjustment adjustment)
+        {
+            ArgumentNullException.ThrowIfNull(adjustment);
+            if (Status != _PayrollStatus.Draft)
+                throw new DomainException("One-time adjustments can only be added to draft payroll runs.");
+
+            if (_oneTimeAdjustments.Any(a => a.EmployeeId == adjustment.EmployeeId && a.Month == adjustment.Month && a.Year == adjustment.Year))
+                throw new DomainException("A one-time adjustment for this employee and period already exists in this payroll run.");
+            
+            _oneTimeAdjustments.Add(adjustment);
         }
     }
 }

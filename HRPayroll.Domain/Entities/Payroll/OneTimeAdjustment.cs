@@ -7,7 +7,7 @@ namespace HRPayroll.Domain.Entities.Payroll
     public class OneTimeAdjustment
     {
         public Guid EmployeeId { get; private set; }
-        public Guid PayrollrunId { get; private set; }
+        public Guid? PayrollrunId { get; private set; }
         public int Month { get; private set; }
         public int Year { get; private set; }
         public _ComponentType ComponentType { get; private set; }
@@ -47,6 +47,17 @@ namespace HRPayroll.Domain.Entities.Payroll
                 Amount = amount,
                 Reason = reason.Trim()
             };
+        }
+
+        internal void LinkToPayrollRun(Guid payrollRunId)
+        {
+            if (payrollRunId == Guid.Empty)
+                throw new DomainException("PayrollrunId must be a valid Guid.");
+
+            if(PayrollrunId.HasValue)
+                throw new DomainException("OneTimeAdjustment is already linked to a PayrollRun.");
+
+            PayrollrunId = payrollRunId;
         }
     }
 }
