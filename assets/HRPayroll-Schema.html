@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HRPayroll — Database Schema</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&family=Syne:wght@400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:        #0e0f11;
+    --bg2:       #16181c;
+    --bg3:       #1e2026;
+    --border:    #2a2d35;
+    --accent:    #4f8ef7;
+    --accent2:   #7c5af7;
+    --text:      #e8eaf0;
+    --text-muted:#7a7f8e;
+    --green:     #3ecf8e;
+    --amber:     #f7a94f;
+    --pink:      #f76f9d;
+    --teal:      #3ecfcf;
+  }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Syne', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ── Header ── */
+  header {
+    padding: 2rem 2.5rem 1.5rem;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    background: var(--bg);
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .logo-icon {
+    width: 36px; height: 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+  .logo-sub  { font-size: 0.7rem; color: var(--text-muted); font-family: 'JetBrains Mono', monospace; margin-top: 1px; }
+
+  .hint {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+  }
+
+  /* ── Module nav tabs ── */
+  nav {
+    padding: 0 2.5rem;
+    display: flex;
+    gap: 0.25rem;
+    border-bottom: 1px solid var(--border);
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  nav::-webkit-scrollbar { display: none; }
+
+  .tab {
+    padding: 0.75rem 1.25rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    color: var(--text-muted);
+    cursor: pointer;
+    border: none;
+    background: none;
+    border-bottom: 2px solid transparent;
+    transition: color 0.2s, border-color 0.2s;
+    white-space: nowrap;
+    font-family: 'Syne', sans-serif;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+  .tab-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    margin-right: 6px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+
+  /* ── Diagram panels ── */
+  .panels { position: relative; }
+
+  .panel {
+    display: none;
+    flex-direction: column;
+    height: calc(100vh - 130px);
+  }
+
+  .panel.active { display: flex; }
+
+  .panel-header {
+    padding: 1.25rem 2.5rem 1rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .panel-title { font-size: 1.3rem; font-weight: 700; letter-spacing: -0.02em; }
+  .panel-desc  { font-size: 0.78rem; color: var(--text-muted); margin-top: 0.2rem; font-family: 'JetBrains Mono', monospace; }
+
+  .controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 0.4rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--border);
+    background: var(--bg3);
+    color: var(--text);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Syne', sans-serif;
+    transition: background 0.15s, border-color 0.15s;
+    letter-spacing: 0.02em;
+  }
+  .btn:hover { background: var(--bg2); border-color: var(--accent); color: var(--accent); }
+
+  /* ── Zoom container ── */
+  .zoom-wrap {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    margin: 0 1rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--bg2);
+    cursor: grab;
+  }
+  .zoom-wrap:active { cursor: grabbing; }
+
+  .zoom-inner {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .diagram-box {
+    min-width: 600px;
+  }
+
+  /* ── Legend ── */
+  .legend {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.6rem 0.9rem;
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+    pointer-events: none;
+    line-height: 1.9;
+  }
+  .legend span { color: var(--text); }
+
+  /* ── Mermaid overrides for dark mode ── */
+  .mermaid svg {
+    background: transparent !important;
+    max-width: none !important;
+  }
+
+  /* Entity header rows — force light text */
+  :root {
+    --mermaid-bg: #1e2026;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🗄</div>
+    <div>
+      <div class="logo-text">HRPayroll</div>
+      <div class="logo-sub">database schema · v1.0</div>
+    </div>
+  </div>
+  <div class="hint">scroll to zoom · drag to pan · double-click to reset</div>
+</header>
+
+<nav id="tabs">
+  <button class="tab active" data-panel="identity">
+    <span class="tab-dot" style="background:var(--accent)"></span>Identity & Access
+  </button>
+  <button class="tab" data-panel="organization">
+    <span class="tab-dot" style="background:var(--green)"></span>Organization
+  </button>
+  <button class="tab" data-panel="employee">
+    <span class="tab-dot" style="background:var(--amber)"></span>Employee
+  </button>
+  <button class="tab" data-panel="attendance">
+    <span class="tab-dot" style="background:var(--teal)"></span>Attendance & Leave
+  </button>
+  <button class="tab" data-panel="payroll">
+    <span class="tab-dot" style="background:var(--pink)"></span>Payroll
+  </button>
+</nav>
+
+<div class="panels">
+
+  <!-- IDENTITY -->
+  <div class="panel active" id="panel-identity">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Identity & Access</div>
+        <div class="panel-desc">companies · users · roles · permissions · role_permissions · user_roles</div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="zoomIn('identity')">＋ Zoom in</button>
+        <button class="btn" onclick="zoomOut('identity')">－ Zoom out</button>
+        <button class="btn" onclick="resetZoom('identity')">↺ Reset</button>
+      </div>
+    </div>
+    <div class="zoom-wrap" id="wrap-identity">
+      <div class="zoom-inner" id="inner-identity">
+        <div class="diagram-box">
+          <div class="mermaid" id="diag-identity">
+erDiagram
+  companies ||--o{ users : "has"
+  companies ||--o{ roles : "owns"
+  users ||--o{ user_roles : "assigned"
+  roles ||--o{ user_roles : "assigned to"
+  roles ||--o{ role_permissions : "has"
+  permissions ||--o{ role_permissions : "granted via"
+
+  companies {
+    uuid id PK
+    string name
+    string logo_url
+  }
+  users {
+    uuid id PK
+    uuid company_id FK
+    string email
+    string first_name
+    string last_name
+    string password_hash
+  }
+  roles {
+    uuid id PK
+    uuid company_id FK
+    string name
+    bool is_system_role
+  }
+  permissions {
+    uuid id PK
+    string name
+    string group_name
+    string description
+  }
+  user_roles {
+    uuid user_id FK
+    uuid role_id FK
+  }
+  role_permissions {
+    uuid role_id FK
+    uuid permission_id FK
+  }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ORGANIZATION -->
+  <div class="panel" id="panel-organization">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Organization</div>
+        <div class="panel-desc">branches · grades · job_titles · departments</div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="zoomIn('organization')">＋ Zoom in</button>
+        <button class="btn" onclick="zoomOut('organization')">－ Zoom out</button>
+        <button class="btn" onclick="resetZoom('organization')">↺ Reset</button>
+      </div>
+    </div>
+    <div class="zoom-wrap" id="wrap-organization">
+      <div class="zoom-inner" id="inner-organization">
+        <div class="diagram-box">
+          <div class="mermaid" id="diag-organization">
+erDiagram
+  companies ||--o{ branches : "has"
+  companies ||--o{ departments : "has"
+  grades ||--o{ job_titles : "contains"
+  departments }o--o| employees : "managed by"
+  employees }o--|| job_titles : "holds"
+  employees }o--|| branches : "works at"
+
+  companies {
+    uuid id PK
+    string name
+    string logo_url
+  }
+  branches {
+    uuid id PK
+    uuid company_id FK
+    string name
+    string address
+  }
+  departments {
+    uuid id PK
+    uuid company_id FK
+    uuid manager_id FK
+    string name
+  }
+  grades {
+    uuid id PK
+    string name
+    decimal min_salary
+    decimal max_salary
+  }
+  job_titles {
+    uuid id PK
+    uuid grade_id FK
+    string name
+  }
+  employees {
+    uuid id PK
+    string employee_code
+    string status
+  }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- EMPLOYEE -->
+  <div class="panel" id="panel-employee">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Employee</div>
+        <div class="panel-desc">employees · personal_info · emergency_contacts · employment_histories · documents</div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="zoomIn('employee')">＋ Zoom in</button>
+        <button class="btn" onclick="zoomOut('employee')">－ Zoom out</button>
+        <button class="btn" onclick="resetZoom('employee')">↺ Reset</button>
+      </div>
+    </div>
+    <div class="zoom-wrap" id="wrap-employee">
+      <div class="zoom-inner" id="inner-employee">
+        <div class="diagram-box">
+          <div class="mermaid" id="diag-employee">
+erDiagram
+  employees ||--|| employee_personal_info : "has"
+  employees ||--o{ employee_emergency_contacts : "has"
+  employees ||--o{ employment_histories : "tracked by"
+  employees ||--o{ documents : "owns"
+  users ||--o{ documents : "uploaded by"
+
+  employees {
+    uuid id PK
+    uuid user_id FK
+    uuid department_id FK
+    uuid branch_id FK
+    uuid job_title_id FK
+    uuid salary_structure_id FK
+    string employee_code
+    date hire_date
+    string status
+  }
+  employee_personal_info {
+    uuid id PK
+    uuid employee_id FK
+    date date_of_birth
+    string gender
+    string national_id
+    string phone
+    string nationality
+    string address
+  }
+  employee_emergency_contacts {
+    uuid id PK
+    uuid employee_id FK
+    string full_name
+    string relationship
+    string phone
+    bool is_primary
+  }
+  employment_histories {
+    uuid id PK
+    uuid employee_id FK
+    string change_type
+    string old_value
+    string new_value
+    date effective_date
+  }
+  documents {
+    uuid id PK
+    uuid employee_id FK
+    uuid uploaded_by FK
+    string type
+    string file_name
+    string file_url
+    date expiry_date
+  }
+  users {
+    uuid id PK
+    string email
+    string first_name
+    string last_name
+  }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ATTENDANCE -->
+  <div class="panel" id="panel-attendance">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Attendance & Leave</div>
+        <div class="panel-desc">leave_types · leave_policies · leave_balances · leave_requests · attendance_records · public_holidays</div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="zoomIn('attendance')">＋ Zoom in</button>
+        <button class="btn" onclick="zoomOut('attendance')">－ Zoom out</button>
+        <button class="btn" onclick="resetZoom('attendance')">↺ Reset</button>
+      </div>
+    </div>
+    <div class="zoom-wrap" id="wrap-attendance">
+      <div class="zoom-inner" id="inner-attendance">
+        <div class="diagram-box">
+          <div class="mermaid" id="diag-attendance">
+erDiagram
+  leave_types ||--o{ leave_policies : "governs"
+  leave_types ||--o{ leave_balances : "tracked in"
+  leave_types ||--o{ leave_requests : "used in"
+  employees ||--o{ leave_balances : "owns"
+  employees ||--o{ leave_requests : "submits"
+  employees ||--o{ attendance_records : "logged in"
+  companies ||--o{ leave_policies : "defines"
+  companies ||--o{ public_holidays : "defines"
+  grades }o--o{ leave_policies : "scoped to"
+
+  leave_types {
+    uuid id PK
+    string name
+    int default_days_per_year
+    bool is_paid
+    bool allow_carry_forward
+    int max_carry_forward_days
+  }
+  leave_policies {
+    uuid id PK
+    uuid company_id FK
+    uuid leave_type_id FK
+    uuid grade_id FK
+    int allowed_days
+    date effective_from
+  }
+  leave_balances {
+    uuid id PK
+    uuid employee_id FK
+    uuid leave_type_id FK
+    int year
+    int total_days
+    int carried_forward_days
+    int used_days
+  }
+  leave_requests {
+    uuid id PK
+    uuid employee_id FK
+    uuid leave_type_id FK
+    date start_date
+    date end_date
+    int total_days
+    string status
+    uuid reviewed_by FK
+  }
+  attendance_records {
+    uuid id PK
+    uuid employee_id FK
+    date date
+    time check_in
+    time check_out
+    decimal total_hours
+    string status
+  }
+  public_holidays {
+    uuid id PK
+    uuid company_id FK
+    string name
+    date date
+    bool is_recurring
+  }
+  employees { uuid id PK }
+  companies { uuid id PK }
+  grades { uuid id PK }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYROLL -->
+  <div class="panel" id="panel-payroll">
+    <div class="panel-header">
+      <div>
+        <div class="panel-title">Payroll</div>
+        <div class="panel-desc">salary_components · salary_structures · payroll_runs · payslips · payslip_lines · one_time_adjustments</div>
+      </div>
+      <div class="controls">
+        <button class="btn" onclick="zoomIn('payroll')">＋ Zoom in</button>
+        <button class="btn" onclick="zoomOut('payroll')">－ Zoom out</button>
+        <button class="btn" onclick="resetZoom('payroll')">↺ Reset</button>
+      </div>
+    </div>
+    <div class="zoom-wrap" id="wrap-payroll">
+      <div class="zoom-inner" id="inner-payroll">
+        <div class="diagram-box">
+          <div class="mermaid" id="diag-payroll">
+erDiagram
+  salary_structures ||--o{ salary_structure_components : "contains"
+  salary_components ||--o{ salary_structure_components : "used in"
+  employees }o--|| salary_structures : "assigned"
+  companies ||--o{ payroll_runs : "runs"
+  payroll_runs ||--o{ payslips : "generates"
+  payroll_runs ||--o{ one_time_adjustments : "includes"
+  employees ||--o{ payslips : "receives"
+  employees ||--o{ one_time_adjustments : "has"
+  payslips ||--o{ payslip_lines : "details"
+  users }o--|| payroll_runs : "approved by"
+
+  salary_components {
+    uuid id PK
+    string name
+    string type
+    string calculation_type
+  }
+  salary_structures {
+    uuid id PK
+    string name
+  }
+  salary_structure_components {
+    uuid salary_structure_id FK
+    uuid salary_component_id FK
+    decimal value
+    int display_order
+  }
+  payroll_runs {
+    uuid id PK
+    uuid company_id FK
+    int month
+    int year
+    string status
+    uuid approved_by FK
+    datetime approved_at
+  }
+  payslips {
+    uuid id PK
+    uuid payroll_run_id FK
+    uuid employee_id FK
+    decimal basic_salary
+    decimal total_allowances
+    decimal total_deductions
+    decimal net_salary
+  }
+  payslip_lines {
+    uuid id PK
+    uuid payslip_id FK
+    string component_name
+    string type
+    decimal amount
+    int display_order
+  }
+  one_time_adjustments {
+    uuid id PK
+    uuid employee_id FK
+    uuid payroll_run_id FK
+    int month
+    int year
+    string type
+    decimal amount
+    string reason
+  }
+  employees { uuid id PK }
+  companies { uuid id PK }
+  users { uuid id PK }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /panels -->
+
+<div class="legend">
+  <span>||</span> exactly one &nbsp;·&nbsp; <span>o{</span> zero or many &nbsp;·&nbsp; <span>PK</span> primary key &nbsp;·&nbsp; <span>FK</span> foreign key
+</div>
+
+<script type="module">
+import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+
+mermaid.initialize({
+  startOnLoad: false,
+  theme: 'dark',
+  themeVariables: {
+    background:                   '#1e2026',
+    mainBkg:                      '#1e2026',
+    nodeBorder:                   '#2a2d35',
+    clusterBkg:                   '#16181c',
+    titleColor:                   '#e8eaf0',
+    edgeLabelBackground:          '#16181c',
+    attributeBackgroundColorEven: '#16181c',
+    attributeBackgroundColorOdd:  '#1e2026',
+    primaryColor:                 '#252830',
+    primaryTextColor:             '#e8eaf0',
+    primaryBorderColor:           '#4f8ef7',
+    lineColor:                    '#4f8ef7',
+    secondaryColor:               '#1e2026',
+    tertiaryColor:                '#16181c',
+    fontSize:                     '14px',
+    fontFamily:                   '"JetBrains Mono", monospace',
+  },
+  er: {
+    diagramPadding: 30,
+    layoutDirection: 'TB',
+    minEntityWidth: 140,
+    minEntityHeight: 40,
+    entityPadding: 15,
+    useMaxWidth: false,
+  }
+});
+
+// ── Pan/Zoom state per panel ──────────────────────────────────────────
+const state = {};
+
+function initPanZoom(key) {
+  const wrap  = document.getElementById('wrap-' + key);
+  const inner = document.getElementById('inner-' + key);
+
+  state[key] = { scale: 1, tx: 0, ty: 0, dragging: false, startX: 0, startY: 0, startTx: 0, startTy: 0 };
+
+  function applyTransform() {
+    const s = state[key];
+    inner.style.transform = `translate(${s.tx}px, ${s.ty}px) scale(${s.scale})`;
+    inner.style.transformOrigin = '0 0';
+  }
+
+  // Mouse wheel zoom
+  wrap.addEventListener('wheel', e => {
+    e.preventDefault();
+    const s     = state[key];
+    const rect  = wrap.getBoundingClientRect();
+    const mx    = e.clientX - rect.left;
+    const my    = e.clientY - rect.top;
+    const delta = e.deltaY < 0 ? 1.12 : 0.89;
+    const newScale = Math.min(5, Math.max(0.2, s.scale * delta));
+
+    // Zoom towards mouse position
+    s.tx = mx - (mx - s.tx) * (newScale / s.scale);
+    s.ty = my - (my - s.ty) * (newScale / s.scale);
+    s.scale = newScale;
+    applyTransform();
+  }, { passive: false });
+
+  // Drag to pan
+  wrap.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
+    const s = state[key];
+    s.dragging = true;
+    s.startX   = e.clientX;
+    s.startY   = e.clientY;
+    s.startTx  = s.tx;
+    s.startTy  = s.ty;
+    wrap.style.cursor = 'grabbing';
+  });
+
+  window.addEventListener('mousemove', e => {
+    const s = state[key];
+    if (!s.dragging) return;
+    s.tx = s.startTx + (e.clientX - s.startX);
+    s.ty = s.startTy + (e.clientY - s.startY);
+    applyTransform();
+  });
+
+  window.addEventListener('mouseup', () => {
+    state[key].dragging = false;
+    wrap.style.cursor = 'grab';
+  });
+
+  // Touch support
+  let lastTouchDist = null;
+  wrap.addEventListener('touchstart', e => {
+    const s = state[key];
+    if (e.touches.length === 1) {
+      s.dragging = true;
+      s.startX  = e.touches[0].clientX;
+      s.startY  = e.touches[0].clientY;
+      s.startTx = s.tx;
+      s.startTy = s.ty;
+    }
+    if (e.touches.length === 2) {
+      lastTouchDist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+    }
+  }, { passive: true });
+
+  wrap.addEventListener('touchmove', e => {
+    const s = state[key];
+    if (e.touches.length === 1 && s.dragging) {
+      s.tx = s.startTx + (e.touches[0].clientX - s.startX);
+      s.ty = s.startTy + (e.touches[0].clientY - s.startY);
+      applyTransform();
+    }
+    if (e.touches.length === 2 && lastTouchDist !== null) {
+      const dist = Math.hypot(
+        e.touches[0].clientX - e.touches[1].clientX,
+        e.touches[0].clientY - e.touches[1].clientY
+      );
+      const delta    = dist / lastTouchDist;
+      const newScale = Math.min(5, Math.max(0.2, s.scale * delta));
+      const rect     = wrap.getBoundingClientRect();
+      const mx = ((e.touches[0].clientX + e.touches[1].clientX) / 2) - rect.left;
+      const my = ((e.touches[0].clientY + e.touches[1].clientY) / 2) - rect.top;
+      s.tx = mx - (mx - s.tx) * (newScale / s.scale);
+      s.ty = my - (my - s.ty) * (newScale / s.scale);
+      s.scale = newScale;
+      lastTouchDist = dist;
+      applyTransform();
+    }
+  }, { passive: true });
+
+  wrap.addEventListener('touchend', () => {
+    state[key].dragging = false;
+    lastTouchDist = null;
+  });
+
+  // Double-click to reset
+  wrap.addEventListener('dblclick', () => resetZoom(key));
+
+  applyTransform();
+}
+
+// ── Exposed button functions ──────────────────────────────────────────
+window.zoomIn = key => {
+  const s     = state[key];
+  const wrap  = document.getElementById('wrap-' + key);
+  const rect  = wrap.getBoundingClientRect();
+  const cx    = rect.width  / 2;
+  const cy    = rect.height / 2;
+  const ns    = Math.min(5, s.scale * 1.3);
+  s.tx = cx - (cx - s.tx) * (ns / s.scale);
+  s.ty = cy - (cy - s.ty) * (ns / s.scale);
+  s.scale = ns;
+  document.getElementById('inner-' + key).style.transform =
+    `translate(${s.tx}px,${s.ty}px) scale(${s.scale})`;
+};
+
+window.zoomOut = key => {
+  const s     = state[key];
+  const wrap  = document.getElementById('wrap-' + key);
+  const rect  = wrap.getBoundingClientRect();
+  const cx    = rect.width  / 2;
+  const cy    = rect.height / 2;
+  const ns    = Math.max(0.2, s.scale * 0.77);
+  s.tx = cx - (cx - s.tx) * (ns / s.scale);
+  s.ty = cy - (cy - s.ty) * (ns / s.scale);
+  s.scale = ns;
+  document.getElementById('inner-' + key).style.transform =
+    `translate(${s.tx}px,${s.ty}px) scale(${s.scale})`;
+};
+
+window.resetZoom = key => {
+  const s = state[key];
+  s.scale = 1; s.tx = 0; s.ty = 0;
+  document.getElementById('inner-' + key).style.transform = 'translate(0px,0px) scale(1)';
+};
+
+// ── Render mermaid diagrams ───────────────────────────────────────────
+async function renderAll() {
+  const diagrams = document.querySelectorAll('.mermaid');
+  for (const el of diagrams) {
+    const id   = el.id;
+    const code = el.textContent.trim();
+    try {
+      const { svg } = await mermaid.render(id + '-svg', code);
+      el.innerHTML = svg;
+
+      // Force all SVG text to white
+      el.querySelectorAll('svg text, svg tspan').forEach(t => {
+        t.style.fill       = '#e8eaf0';
+        t.style.fontFamily = '"JetBrains Mono", monospace';
+      });
+
+      // Entity header boxes
+      el.querySelectorAll('svg .er.entityBox').forEach(r => {
+        r.style.fill   = '#252830';
+        r.style.stroke = '#4f8ef7';
+      });
+
+      // Entity label / attribute rows
+      el.querySelectorAll('svg .er.entityLabel').forEach(r => {
+        r.style.fill   = '#2d3140';
+        r.style.stroke = 'none';
+      });
+
+    } catch(e) {
+      console.error('Mermaid render error', id, e);
+      el.innerHTML = `<p style="color:#f76f9d;font-family:monospace;padding:1rem">Render error: ${e.message}</p>`;
+    }
+  }
+
+  // Init pan/zoom for every panel
+  ['identity','organization','employee','attendance','payroll'].forEach(k => initPanZoom(k));
+}
+
+// ── Tab switching ─────────────────────────────────────────────────────
+document.getElementById('tabs').addEventListener('click', e => {
+  const btn = e.target.closest('.tab');
+  if (!btn) return;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('panel-' + btn.dataset.panel).classList.add('active');
+});
+
+renderAll();
+</script>
+</body>
+</html>
