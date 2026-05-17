@@ -16,6 +16,8 @@ namespace HRPayroll.Domain.Entities.Identity
         public string PasswordHash { get; private set; }
         public string FullName => $"{FirstName} {LastName}";
         public Company Company { get; private set; }
+        public string? RefreshToken { get; private set; }
+        public DateTime? RefreshTokenExpiresAt { get; private set; }
 
         private readonly List<UserRole> _userRoles = new List<UserRole>();
         public IReadOnlyCollection<UserRole> UserRoles => _userRoles.AsReadOnly();
@@ -37,6 +39,15 @@ namespace HRPayroll.Domain.Entities.Identity
                 LastName = lastName.Trim(),
                 PasswordHash = passwordHash
             };
+        }
+
+        public List<string> GetPermissions()
+        {
+            return this.UserRoles
+            .SelectMany(ur => ur.Role.RolePermissions)
+            .Select(rp => rp.Permission.Name)
+            .Distinct()
+            .ToList();
         }
 
         public void AssignRole(Guid roleId)
@@ -68,6 +79,24 @@ namespace HRPayroll.Domain.Entities.Identity
             ArgumentException.ThrowIfNullOrWhiteSpace(lastName);
             FirstName = firstName.Trim();
             LastName = lastName.Trim();
+        }
+
+        public bool VerifyPassword(string passwordHash)
+        {
+            return PasswordHash == passwordHash;
+        }
+
+        public bool ValidateRefreshToken(string refreshToken)
+        {
+            return RefreshToken == refreshToken
+                && RefreshTokenExpiresAt.HasValue
+                && RefreshTokenExpiresAt.Value > DateTime.UtcNow;
+        }
+
+        public void RotateRefreshToken(string newRefreshToken, DateTime expiresAt)
+        {
+            RefreshToken = newRefreshToken;
+            RefreshTokenExpiresAt = expiresAt;
         }
     }
 }
